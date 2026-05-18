@@ -71,7 +71,7 @@ const app = {
   },
 
   loadStateFromStorage() {
-    const stored = localStorage.getItem("fossboard_data") || localStorage.getItem("aetherboard_data");
+    const stored = localStorage.getItem("fossboard_data");
     if (stored) {
       try {
         state.leaderboards = JSON.parse(stored);
@@ -465,7 +465,14 @@ const app = {
       const response = await fetch(readUrl);
 
       if (!response.ok) {
-        throw new Error(`Network response error: ${response.status}`);
+        let errMsg = `Network response error: ${response.status}`;
+        try {
+          const txt = await response.text();
+          if (txt && txt.trim()) {
+            errMsg = txt.trim();
+          }
+        } catch (_) { }
+        throw new Error(errMsg);
       }
 
       const data = await response.json();
@@ -498,7 +505,17 @@ const app = {
     } catch (err) {
       console.error("Failed loading scores:", err);
       showToast(`Error fetching scores: ${err.message}`, "error");
-      tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger); font-weight: 500;">Failed to connect to API backend.</td></tr>`;
+
+      let tableErrorMsg = err.message;
+      if (err.message.includes("404") || err.message.toLowerCase().includes("not found")) {
+        tableErrorMsg = "Leaderboard not found on the backend server. The keys may be invalid, or the board was deleted.";
+      } else if (err.message.includes("403") || err.message.toLowerCase().includes("forbidden")) {
+        tableErrorMsg = "Access forbidden. The private/public keys may be incorrect.";
+      } else if (err.message.toLowerCase().includes("failed to fetch")) {
+        tableErrorMsg = "Failed to connect to API backend. Check your network connection or backend status.";
+      }
+
+      tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger); font-weight: 500;">${tableErrorMsg}</td></tr>`;
     } finally {
       loader.style.display = "none";
     }

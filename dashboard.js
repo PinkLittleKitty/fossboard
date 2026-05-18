@@ -212,6 +212,90 @@ const app = {
       }
     });
 
+    const tabCreateBtn = document.getElementById("tab-create-btn");
+    const tabImportBtn = document.getElementById("tab-import-btn");
+    const createFormEl = document.getElementById("create-leaderboard-form");
+    const importFormEl = document.getElementById("import-leaderboard-form");
+
+    if (tabCreateBtn && tabImportBtn) {
+      tabCreateBtn.addEventListener("click", () => {
+        tabCreateBtn.classList.add("active");
+        tabCreateBtn.style.color = "var(--text-primary)";
+        tabImportBtn.classList.remove("active");
+        tabImportBtn.style.color = "var(--text-muted)";
+        createFormEl.style.display = "block";
+        importFormEl.style.display = "none";
+      });
+
+      tabImportBtn.addEventListener("click", () => {
+        tabImportBtn.classList.add("active");
+        tabImportBtn.style.color = "var(--text-primary)";
+        tabCreateBtn.classList.remove("active");
+        tabCreateBtn.style.color = "var(--text-muted)";
+        createFormEl.style.display = "none";
+        importFormEl.style.display = "block";
+      });
+    }
+
+    const importSelfHostCheck = document.getElementById("import-self-host-toggle");
+    const importCustomEndpointGroup = document.getElementById("import-custom-endpoint-group");
+
+    if (importSelfHostCheck && importFormEl) {
+      importSelfHostCheck.addEventListener("change", () => {
+        if (importSelfHostCheck.checked) {
+          importCustomEndpointGroup.style.display = "block";
+          document.getElementById("import-custom-endpoint-url").required = true;
+        } else {
+          importCustomEndpointGroup.style.display = "none";
+          document.getElementById("import-custom-endpoint-url").required = false;
+        }
+      });
+
+      importFormEl.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const name = document.getElementById("import-board-name").value.trim();
+        const publicKey = document.getElementById("import-public-key").value.trim();
+        const privateKey = document.getElementById("import-private-key").value.trim() || "[READ-ONLY]";
+        const isSelfHosted = importSelfHostCheck.checked;
+        let apiBase = DEFAULT_API_BASE;
+
+        if (isSelfHosted) {
+          let customUrl = document.getElementById("import-custom-endpoint-url").value.trim();
+          if (customUrl.endsWith("/")) {
+            customUrl = customUrl.slice(0, -1);
+          }
+          if (customUrl) {
+            apiBase = customUrl;
+          }
+        }
+
+        if (state.leaderboards.some(b => b.publicKey === publicKey)) {
+          showToast("This leaderboard is already in your dashboard list!", "error");
+          return;
+        }
+
+        const newBoard = {
+          name,
+          privateKey,
+          publicKey,
+          sort: "desc",
+          customUrl: isSelfHosted ? apiBase : null,
+        };
+
+        state.leaderboards.push(newBoard);
+        this.saveStateToStorage();
+        this.renderLeaderboardSidebar();
+        this.selectLeaderboard(newBoard);
+
+        importFormEl.reset();
+        importCustomEndpointGroup.style.display = "none";
+        importSelfHostCheck.checked = false;
+
+        showToast("Leaderboard imported successfully!", "success");
+        document.getElementById("nav-dashboard-btn").click();
+      });
+    }
+
     const adminScoreForm = document.getElementById("admin-score-form");
     adminScoreForm.addEventListener("submit", async (e) => {
       e.preventDefault();

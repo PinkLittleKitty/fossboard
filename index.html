@@ -62,7 +62,15 @@
           </div>
 
           <div class="card" id="creation-card-wrapper">
-            <h2 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem;">New Leaderboard</h2>
+            <div
+              style="display: flex; gap: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; padding-bottom: 0.5rem;">
+              <button class="tab-btn active" id="tab-create-btn"
+                style="background:none; border:none; color:var(--text-primary); font-family:var(--font-sans); font-weight:600; font-size:0.95rem; cursor:pointer; padding-bottom: 0.25rem;">New
+                Board</button>
+              <button class="tab-btn" id="tab-import-btn"
+                style="background:none; border:none; color:var(--text-muted); font-family:var(--font-sans); font-weight:600; font-size:0.95rem; cursor:pointer; padding-bottom: 0.25rem;">Import
+                Existing</button>
+            </div>
 
             <form id="create-leaderboard-form">
               <div class="form-group">
@@ -99,6 +107,47 @@
 
               <button class="btn btn-primary" type="submit" style="width: 100%;" id="create-submit-btn">
                 <span>Create Leaderboard</span>
+              </button>
+            </form>
+
+            <form id="import-leaderboard-form" style="display: none;">
+              <div class="form-group">
+                <label class="form-label" for="import-board-name">Leaderboard Name</label>
+                <input class="form-input" type="text" id="import-board-name" placeholder="e.g. Chess TD Scores"
+                  required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="import-public-key">Public Key</label>
+                <input class="form-input" type="text" id="import-public-key" placeholder="pub-..." required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="import-private-key">Private Key (Optional)</label>
+                <input class="form-input" type="text" id="import-private-key" placeholder="priv-...">
+              </div>
+
+              <div class="form-group">
+                <div class="toggle-group">
+                  <div class="toggle-label-container">
+                    <span class="toggle-title">Self-Host Backend</span>
+                    <span class="toggle-desc">If this board runs on a custom engine</span>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="import-self-host-toggle">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group" id="import-custom-endpoint-group" style="display: none;">
+                <label class="form-label" for="import-custom-endpoint-url">Custom API Base URL</label>
+                <input class="form-input" type="url" id="import-custom-endpoint-url"
+                  placeholder="https://my-board.deno.dev">
+              </div>
+
+              <button class="btn btn-primary" type="submit" style="width: 100%;" id="import-submit-btn">
+                <span>Import Leaderboard</span>
               </button>
             </form>
           </div>

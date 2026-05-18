@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE = "https://fossboard.deno.dev";
+const DEFAULT_API_BASE = "https://fossboard.justneki.deno.net";
 
 const state = {
   leaderboards: [],

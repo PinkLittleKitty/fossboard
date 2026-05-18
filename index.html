@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FOSSBoard | Free, Serverless & Secure HTTPS Leaderboard Engine</title>
+  <meta name="description"
+    content="FOSSBoard is an open-source, serverless, HTTPS alternative to dreamlo. Host your game leaderboards for free on GitHub Pages and Deno Deploy or Cloudflare Workers.">
+  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+
+<body>
+
+  <div class="app-container">
+    <header>
+      <a href="#" class="logo" id="logo-link">
+        <div class="logo-icon"><i class="fa-solid fa-terminal"></i></div>
+        <span>FOSSBoard</span>
+      </a>
+      <nav class="nav-links">
+        <button class="nav-btn active" id="nav-home-btn"><i class="fa-solid fa-plus"></i> Create</button>
+        <button class="nav-btn" id="nav-dashboard-btn"><i class="fa-solid fa-table-list"></i> Dash</button>
+        <button class="nav-btn" id="nav-docs-btn"><i class="fa-solid fa-code"></i> Integration Hub</button>
+      </nav>
+    </header>
+
+    <main>
+
+      <section class="view-section active" id="landing-view">
+
+        <div class="hero-section">
+          <div class="hero-text">
+            <h1>Free HTTPS Leaderboards.</h1>
+            <p>
+              FOSSBoard is an open-source, secure HTTPS alternative to dreamlo. It runs entirely serverless on free
+              tiers (like Deno Deploy or Cloudflare Workers) and hosts a simple path-based REST API for your Unity,
+              Godot, WebGL, or Python games.
+            </p>
+            <div class="cta-buttons">
+              <button class="btn btn-primary" id="scroll-to-create-btn">Create a Leaderboard</button>
+              <button class="btn btn-secondary" id="learn-to-host-btn">Self-Hosting Guide</button>
+            </div>
+
+            <div style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
+              <h3 style="font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--text-primary);">Specifications:</h3>
+              <ul
+                style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                <li><i class="fa-solid fa-check" style="color: var(--success); margin-right: 0.5rem;"></i> Drop-in
+                  dreamlo API compatibility (just swap the domain)</li>
+                <li><i class="fa-solid fa-check" style="color: var(--success); margin-right: 0.5rem;"></i> Full CORS
+                  headers enabled (safe for browser WebGL games)</li>
+                <li><i class="fa-solid fa-check" style="color: var(--success); margin-right: 0.5rem;"></i> Native HTTPS
+                  encryption (blocks mixed-content warnings)</li>
+                <li><i class="fa-solid fa-check" style="color: var(--success); margin-right: 0.5rem;"></i> High-speed
+                  storage utilizing global edge key-value databases</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card" id="creation-card-wrapper">
+            <h2 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem;">New Leaderboard</h2>
+
+            <form id="create-leaderboard-form">
+              <div class="form-group">
+                <label class="form-label" for="board-name">Leaderboard Name</label>
+                <input class="form-input" type="text" id="board-name" placeholder="e.g. Space Raiders Highscores"
+                  required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="board-sort">Sorting</label>
+                <select class="form-select" id="board-sort">
+                  <option value="desc">Descending (High Scores First)</option>
+                  <option value="asc">Ascending (Best Times/Lowest First)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <div class="toggle-group">
+                  <div class="toggle-label-container">
+                    <span class="toggle-title">Self-Host Backend</span>
+                    <span class="toggle-desc">Connect to your own custom API</span>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="self-host-toggle">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group" id="custom-endpoint-group" style="display: none;">
+                <label class="form-label" for="custom-endpoint-url">Custom API Base URL</label>
+                <input class="form-input" type="url" id="custom-endpoint-url" placeholder="https://my-board.deno.dev">
+              </div>
+
+              <button class="btn btn-primary" type="submit" style="width: 100%;" id="create-submit-btn">
+                <span>Create Leaderboard</span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+      </section>
+
+      <section class="view-section" id="dashboard-view">
+        <h1 class="page-title">Leaderboard Manager</h1>
+        <p class="page-subtitle">Moderate scores, log test entries, and manage data.</p>
+
+        <div class="dashboard-layout">
+
+          <div class="sidebar-panel">
+            <div class="card">
+              <h3
+                style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+                <span>Active Boards</span>
+                <span id="lb-count-badge"
+                  style="font-size: 0.75rem; background: var(--bg-base); padding: 0.1rem 0.4rem; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary);">0</span>
+              </h3>
+
+              <div class="lb-list-container" id="leaderboards-sidebar-list">
+                <div class="empty-state" style="padding: 1.5rem 1rem;">
+                  <p style="font-size: 0.8rem; color: var(--text-muted);">No leaderboards in localStorage.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" id="admin-add-score-card" style="display: none;">
+              <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">Admin Entry Console</h3>
+              <form id="admin-score-form">
+                <div class="form-group">
+                  <label class="form-label" for="admin-player-name">Player Name</label>
+                  <input class="form-input" type="text" id="admin-player-name" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="admin-player-score">Score</label>
+                  <input class="form-input" type="number" id="admin-player-score" required>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label" for="admin-player-seconds">Time (s)</label>
+                    <input class="form-input" type="number" id="admin-player-seconds" value="0">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="admin-player-text">Extra Text</label>
+                    <input class="form-input" type="text" id="admin-player-text">
+                  </div>
+                </div>
+                <button class="btn btn-secondary" type="submit" style="width: 100%;" id="admin-score-submit-btn">
+                  <span>Submit Entry</span>
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <div class="dashboard-main">
+
+            <div class="card empty-state" id="dashboard-no-selection">
+              <div class="empty-icon"><i class="fa-solid fa-ranking-stars"></i></div>
+              <h2 style="font-size: 1.15rem; margin-bottom: 0.5rem;">No Board Selected</h2>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+                Select a leaderboard from the sidebar or click Create to generate a new board.
+              </p>
+              <button class="btn btn-primary btn-sm" id="dash-create-redirect-btn">Create New Board</button>
+            </div>
+
+            <div class="card dashboard-header-card" id="dashboard-active-header" style="display: none;">
+              <div class="dashboard-meta-info">
+                <div class="dashboard-meta-title">
+                  <span id="active-board-name">Space Raiders Highscores</span>
+                  <span class="sort-badge" id="active-board-sort">High Score First</span>
+                </div>
+
+                <div class="dashboard-meta-keys">
+                  <div class="key-pill" title="Private key. Keep this secret.">
+                    <label>Private Key</label>
+                    <span id="active-board-priv">priv-893f4a38df</span>
+                    <button
+                      onclick="app.copyToClipboard(document.getElementById('active-board-priv').innerText, 'Private Key')">
+                      <i class="fa-regular fa-copy"></i>
+                    </button>
+                  </div>
+                  <div class="key-pill" title="Public key. Safe to expose.">
+                    <label>Public Key</label>
+                    <span id="active-board-pub">pub-73ad9df8f2</span>
+                    <button
+                      onclick="app.copyToClipboard(document.getElementById('active-board-pub').innerText, 'Public Key')">
+                      <i class="fa-regular fa-copy"></i>
+                    </button>
+                  </div>
+                  <div class="key-pill" title="Active API Base URL">
+                    <label>API Endpoint</label>
+                    <span id="active-board-endpoint-url"
+                      style="color: var(--primary);">https://fossboard.deno.dev</span>
+                    <button
+                      onclick="app.copyToClipboard(document.getElementById('active-board-endpoint-url').innerText, 'Endpoint URL')">
+                      <i class="fa-regular fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="table-actions">
+                <button class="btn btn-secondary btn-sm" id="btn-export-csv"><i class="fa-solid fa-file-csv"></i> Export
+                  CSV</button>
+                <button class="btn btn-danger btn-sm" id="btn-clear-board"><i class="fa-solid fa-trash"></i> Wipe
+                  Board</button>
+              </div>
+            </div>
+
+            <div class="card" id="dashboard-active-table-card" style="display: none; position: relative;">
+
+              <div class="table-controls">
+                <div class="search-input-wrapper">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input type="text" class="form-input" id="table-search-input" placeholder="Filter by username...">
+                </div>
+
+                <div class="table-actions">
+                  <button class="btn btn-secondary btn-sm" id="btn-refresh-scores">Refresh</button>
+                </div>
+              </div>
+
+              <div class="table-container">
+                <table class="scores-table">
+                  <thead>
+                    <tr>
+                      <th class="rank-col">Rank</th>
+                      <th class="username-col">Username</th>
+                      <th class="score-col">Score</th>
+                      <th class="seconds-col">Time</th>
+                      <th class="text-col">Metadata</th>
+                      <th class="date-col">Date</th>
+                      <th class="action-col">Delete</th>
+                    </tr>
+                  </thead>
+                  <tbody id="scores-table-body">
+                  </tbody>
+                </table>
+              </div>
+
+              <div id="table-loader"
+                style="display: none; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(9,9,11,0.8); border-radius: var(--radius-md); align-items:center; justify-content:center; flex-direction:column; gap: 0.5rem; z-index:10;">
+                <div class="spinner"></div>
+                <p style="color: var(--text-secondary); font-size: 0.8rem;">Retrieving scores...</p>
+              </div>
+
+              <div id="table-empty-state" style="display: none; padding: 3rem 1.5rem; text-align: center;">
+                <div style="font-size: 1.75rem; color: var(--text-muted); margin-bottom: 0.75rem;"><i
+                    class="fa-solid fa-inbox"></i></div>
+                <h4 style="font-size: 0.95rem; margin-bottom: 0.25rem;">Empty Leaderboard</h4>
+                <p style="font-size: 0.8rem; color: var(--text-secondary);">No player scores logged for this board yet.
+                </p>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <section class="view-section" id="docs-view">
+        <h1 class="page-title">Integration Hub</h1>
+        <p class="page-subtitle">REST specification and dynamically configured snippets.</p>
+
+        <div class="docs-layout">
+
+          <div class="docs-nav">
+            <button class="docs-nav-btn active" data-section="docs-api"><i class="fa-solid fa-network-wired"></i> REST
+              API</button>
+            <button class="docs-nav-btn" data-section="docs-js"><i class="fa-brands fa-js"></i> JavaScript
+              Fetch</button>
+            <button class="docs-nav-btn" data-section="docs-unity"><i class="fa-solid fa-cube"></i> Unity (C#)</button>
+            <button class="docs-nav-btn" data-section="docs-godot"><i class="fa-solid fa-robot"></i> Godot
+              (GDScript)</button>
+            <button class="docs-nav-btn" data-section="docs-python"><i class="fa-brands fa-python"></i> Python</button>
+            <button class="docs-nav-btn" data-section="docs-unreal"><i class="fa-solid fa-gamepad"></i> Unreal
+              (C++)</button>
+            <button class="docs-nav-btn" data-section="docs-self-host"><i class="fa-solid fa-server"></i>
+              Self-Hosting</button>
+          </div>
+
+          <div class="docs-content card">
+
+            <div class="docs-section active" id="docs-api">
+              <h2 style="font-size: 1.15rem; margin-bottom: 0.75rem;">REST API Endpoints</h2>
+              <p class="docs-text">
+                FOSSBoard handles path-based HTTP GET requests. All responses have CORS enabled, making them fully
+                compliant with browser/WebGL clients.
+              </p>
+
+              <h3 style="font-size: 0.95rem; margin-top: 1.25rem; margin-bottom: 0.4rem;">1. Add / Update Score</h3>
+              <div class="endpoint-block">
+                <div>
+                  <span class="api-method get">GET</span>
+                  <span class="endpoint-url"
+                    id="doc-endpoint-add">https://fossboard.deno.dev/lb/[PRIVATE_KEY]/add/[NAME]/[SCORE]/[SECONDS]/[TEXT]</span>
+                </div>
+                <button class="copy-endpoint-btn"
+                  onclick="app.copyToClipboard(document.getElementById('doc-endpoint-add').innerText, 'Add Score Endpoint')">Copy</button>
+              </div>
+
+              <table class="param-table">
+                <thead>
+                  <tr>
+                    <th>Parameter</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="param-name">[PRIVATE_KEY]</td>
+                    <td class="param-type">String</td>
+                    <td>Yes</td>
+                    <td>Secret leaderboard write code.</td>
+                  </tr>
+                  <tr>
+                    <td class="param-name">[NAME]</td>
+                    <td class="param-type">String</td>
+                    <td>Yes</td>
+                    <td>Alphanumeric URL-safe player username.</td>
+                  </tr>
+                  <tr>
+                    <td class="param-name">[SCORE]</td>
+                    <td class="param-type">Integer</td>
+                    <td>Yes</td>
+                    <td>Numerical value scored.</td>
+                  </tr>
+                  <tr>
+                    <td class="param-name">[SECONDS]</td>
+                    <td class="param-type">Integer</td>
+                    <td>No</td>
+                    <td>Seconds elapsed (default 0).</td>
+                  </tr>
+                  <tr>
+                    <td class="param-name">[TEXT]</td>
+                    <td class="param-type">String</td>
+                    <td>No</td>
+                    <td>Custom metadata block (default blank).</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h3 style="font-size: 0.95rem; margin-top: 1.25rem; margin-bottom: 0.4rem;">2. Retrieve Leaderboard</h3>
+              <p class="docs-text">Fetch scores sorted according to board rules. Supports <code>?limit=X</code> and
+                <code>?skip=Y</code> query filters.
+              </p>
+
+              <div class="endpoint-block">
+                <div>
+                  <span class="api-method get">GET</span>
+                  <span class="endpoint-url"
+                    id="doc-endpoint-read">https://fossboard.deno.dev/lb/[PUBLIC_KEY]/json</span>
+                </div>
+                <button class="copy-endpoint-btn"
+                  onclick="app.copyToClipboard(document.getElementById('doc-endpoint-read').innerText, 'Read Endpoint')">Copy</button>
+              </div>
+
+              <div class="docs-text" style="font-size: 0.85rem;">
+                Endpoint suffixes for different response schemas:
+                <ul style="margin-left: 1.25rem; margin-top: 0.25rem;">
+                  <li><strong>JSON format</strong>: <code>/lb/[PUBLIC_KEY]/json</code></li>
+                  <li><strong>Pipe format</strong>: <code>/lb/[PUBLIC_KEY]/pipe</code></li>
+                  <li><strong>XML format</strong>: <code>/lb/[PUBLIC_KEY]/xml</code></li>
+                </ul>
+              </div>
+
+              <h3 style="font-size: 0.95rem; margin-top: 1.25rem; margin-bottom: 0.4rem;">3. Delete Player Entry</h3>
+              <div class="endpoint-block">
+                <div>
+                  <span class="api-method get">GET</span>
+                  <span class="endpoint-url"
+                    id="doc-endpoint-delete">https://fossboard.deno.dev/lb/[PRIVATE_KEY]/delete/[NAME]</span>
+                </div>
+                <button class="copy-endpoint-btn"
+                  onclick="app.copyToClipboard(document.getElementById('doc-endpoint-delete').innerText, 'Delete Endpoint')">Copy</button>
+              </div>
+
+              <h3 style="font-size: 0.95rem; margin-top: 1.25rem; margin-bottom: 0.4rem;">4. Clear Leaderboard</h3>
+              <div class="endpoint-block">
+                <div>
+                  <span class="api-method get">GET</span>
+                  <span class="endpoint-url"
+                    id="doc-endpoint-clear">https://fossboard.deno.dev/lb/[PRIVATE_KEY]/clear</span>
+                </div>
+                <button class="copy-endpoint-btn"
+                  onclick="app.copyToClipboard(document.getElementById('doc-endpoint-clear').innerText, 'Wipe Endpoint')">Copy</button>
+              </div>
+            </div>
+
+            <div class="docs-section" id="docs-js">
+              <h2 style="font-size: 1.15rem; margin-bottom: 0.5rem;">JavaScript Integration</h2>
+              <p class="docs-text">Standard browser Fetch API calls.</p>
+
+              <div class="code-box">
+                <div class="code-box-header">
+                  <span class="code-box-lang">Javascript (Fetch)</span>
+                  <button class="code-box-copy" onclick="app.copyCodeBlock('code-js-block')">Copy</button>
+                </div>
+                <pre><code id="code-js-block">const API_URL = "[API_URL]";
+const PRIVATE_KEY = "[PRIVATE_KEY]";
+const PUBLIC_KEY = "[PUBLIC_KEY]";
+
+async function submitScore(playerName, score, seconds = 0, text = "") {
+  try {
+    const url = `${API_URL}/lb/${PRIVATE_KEY}/add/${encodeURIComponent(playerName)}/${score}/${seconds}/${encodeURIComponent(text)}`;
+    const response = await fetch(url);
+    const result = await response.text();
+    return result === "OK";
+  } catch (error) {
+    console.error("Score submission failed:", error);
+    return false;
+  }
+}
+
+async function getScores() {
+  try {
+    const response = await fetch(`${API_URL}/lb/${PUBLIC_KEY}/json`);
+    const data = await response.json();
+    const leaderboard = data.dreamlo.leaderboard;
+    if (!leaderboard) return [];
+    const entries = leaderboard.entry;
+    if (!entries) return [];
+    return Array.isArray(entries) ? entries : [entries];
+  } catch (error) {
+    console.error("Scores loading failed:", error);
+    return [];
+  }
+}</code></pre>
+              </div>
+            </div>
+
+            <div class="docs-section" id="docs-unity">
+              <h2 style="font-size: 1.15rem; margin-bottom: 0.5rem;">Unity C#</h2>
+              <p class="docs-text">Asynchronous API interaction using standard <code>UnityWebRequest</code>.</p>
+
+              <div class="code-box">
+                <div class="code-box-header">
+                  <span class="code-box-lang">C#</span>
+                  <button class="code-box-copy" onclick="app.copyCodeBlock('code-unity-block')">Copy</button>
+                </div>
+                <pre><code id="code-unity-block">using System.Collections;
+using UnityEngine;
+using UnityEngine.Networking;
+
+public class FOSSBoardLeaderboard : MonoBehaviour
+{
+    private const string ApiUrl = "[API_URL]";
+    private const string PrivateKey = "[PRIVATE_KEY]";
+    private const string PublicKey = "[PUBLIC_KEY]";
+
+    public void AddScore(string playerName, int score, int seconds = 0, string extraText = "")
+    {
+        StartCoroutine(AddScoreCoroutine(playerName, score, seconds, extraText));
+    }
+
+    private IEnumerator AddScoreCoroutine(string name, int score, int seconds, string text)
+    {
+        string url = $"{ApiUrl}/lb/{PrivateKey}/add/{UnityWebRequest.EscapeURL(name)}/{score}/{seconds}/{UnityWebRequest.EscapeURL(text)}";
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+        {
+            yield return webRequest.SendWebRequest();
+            if (webRequest.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError("Error adding score: " + webRequest.error);
+            }
+        }
+    }
+
+    public void LoadScores()
+    {
+        StartCoroutine(LoadScoresCoroutine());
+    }
+
+    private IEnumerator LoadScoresCoroutine()
+    {
+        string url = $"{ApiUrl}/lb/{PublicKey}/pipe";
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+        {
+            yield return webRequest.SendWebRequest();
+            if (webRequest.result == UnityWebRequest.Result.Success)
+            {
+                ParsePipeScores(webRequest.downloadHandler.text);
+            }
+        }
+    }
+
+    private void ParsePipeScores(string raw)
+    {
+        if (string.IsNullOrEmpty(raw)) return;
+        string[] rows = raw.Split('\n');
+        foreach (string row in rows)
+        {
+            if (string.IsNullOrEmpty(row)) continue;
+            string[] cols = row.Split('|');
+            string username = cols[0];
+            int score = int.Parse(cols[1]);
+            int seconds = int.Parse(cols[2]);
+            string text = cols[3];
+            string date = cols[4];
+            Debug.Log($"{username}: {score} ({text})");
+        }
+    }
+}</code></pre>
+              </div>
+            </div>
+
+            <div class="docs-section" id="docs-godot">
+              <h2 style="font-size: 1.15rem; margin-bottom: 0.5rem;">Godot (GDScript)</h2>
+              <p class="docs-text">API calls utilising standard Godot 4 <code>HTTPRequest</code> nodes.</p>
+
+              <div class="code-box">
+                <div class="code-box-header">
+                  <span class="code-box-lang">GDScript</span>
+                  <button class="code-box-copy" onclick="app.copyCodeBlock('code-godot-block')">Copy</button>
+                </div>
+                <pre><code id="code-godot-block">extends Node
+
+const API_URL = "[API_URL]"
+const PRIVATE_KEY = "[PRIVATE_KEY]"
+const PUBLIC_KEY = "[PUBLIC_KEY]"
+
+func submit_score(player_name: String, score: int, seconds: int = 0, extra_text: String = ""):
+	var http_client = HTTPRequest.new()
+	add_child(http_client)
+	var name_escaped = player_name.uri_encode()
+	var text_escaped = extra_text.uri_encode()
+	var url = "%s/lb/%s/add/%s/%d/%d/%s" % [API_URL, PRIVATE_KEY, name_escaped, score, seconds, text_escaped]
+	
+	http_client.request_completed.connect(func(result, response_code, headers, body):
+		http_client.queue_free()
+	)
+	http_client.request(url)
+
+func get_leaderboard():
+	var http_client = HTTPRequest.new()
+	add_child(http_client)
+	var url = "%s/lb/%s/json" % [API_URL, PUBLIC_KEY]
+	
+	http_client.request_completed.connect(func(result, response_code, headers, body):
+		if response_code == 200:
+			var json = JSON.new()
+			if json.parse(body.get_string_from_utf8()) == OK:
+				var data = json.get_data()
+				var leaderboard = data.get("dreamlo", {}).get("leaderboard", null)
+				if leaderboard:
+					var entries = leaderboard.get("entry", [])
+					if typeof(entries) == TYPE_DICTIONARY:
+						entries = [entries]
+					print("Scores loaded: ", entries)
+		http_client.queue_free()
+	)
+	http_client.request(url)</code></pre>
+              </div>
+            </div>
+
+            <div class="docs-section" id="docs-python">
+              <h2 style="font-size: 1.15rem; margin-bottom: 0.5rem;">Python</h2>
+              <p class="docs-text">Log or fetch scores using the <code>requests</code> module.</p>
+
+              <div class="code-box">
+                <div class="code-box-header">
+                  <span class="code-box-lang">Python</span>
+                  <button class="code-box-copy" onclick="app.copyCodeBlock('code-python-block')">Copy</button>
+                </div>
+                <pre><code id="code-python-block">import requests
+import urllib.parse
+
+API_URL = "[API_URL]"
+PRIVATE_KEY = "[PRIVATE_KEY]"
+PUBLIC_KEY = "[PUBLIC_KEY]"
+
+def add_score(player_name, score, seconds=0, text=""):
+    name_encoded = urllib.parse.quote(player_name)
+    text_encoded = urllib.parse.quote(text)
+    url = f"{API_URL}/lb/{PRIVATE_KEY}/add/{name_encoded}/{score}/{seconds}/{text_encoded}"
+    response = requests.get(url)
+    return response.status_code == 200 and response.text == "OK"
+
+def get_scores():
+    url = f"{API_URL}/lb/{PUBLIC_KEY}/json"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        leaderboard = data.get("dreamlo", {}).get("leaderboard", None)
+        if not leaderboard:
+            return []
+        entries = leaderboard.get("entry", [])
+        if isinstance(entries, dict):
+            return [entries]
+        return entries
+    return []</code></pre>
+              </div>
+            </div>
+
+            <div class="docs-section" id="docs-unreal">
+              <h2 style="font-size: 1.15rem; margin-bottom: 0.5rem;">Unreal Engine C++</h2>
+              <p class="docs-text">Standard engine HTTP requests.</p>
+
+              <div class="code-box">
+                <div class="code-box-header">
+                  <span class="code-box-lang">C++</span>
+                  <button class="code-box-copy" onclick="app.copyCodeBlock('code-unreal-block')">Copy</button>
+                </div>
+                <pre><code id="code-unreal-block">#include "Http.h"
+#include "Interfaces/IHttpRequest.h"
+#include "Interfaces/IHttpResponse.h"
+
+FString ApiUrl = TEXT("[API_URL]");
+FString PrivateKey = TEXT("[PRIVATE_KEY]");
+FString PublicKey = TEXT("[PUBLIC_KEY]");
+
+void SubmitHighscore(FString PlayerName, int32 Score, int32 Seconds, FString ExtraText)
+{
+    FString EncodedName = FGenericPlatformHttp::UrlEncode(PlayerName);
+    FString EncodedText = FGenericPlatformHttp::UrlEncode(ExtraText);
+    FString RequestUrl = FString::Printf(TEXT("%s/lb/%s/add/%s/%d/%d/%s"), *ApiUrl, *PrivateKey, *EncodedName, Score, Seconds, *EncodedText);
+
+    TSharedRef&lt;IHttpRequest, ESPMode::ThreadSafe&gt; Request = FHttpModule::Get().CreateRequest();
+    Request->SetVerb("GET");
+    Request->SetURL(RequestUrl);
+    Request->ProcessRequest();
+}</code></pre>
+              </div>
+            </div>
+
+            <div class="docs-section" id="docs-self-host">
+              <h2 style="font-size: 1.15rem; margin-bottom: 0.5rem;">Self-Hosting</h2>
+              <p class="docs-text">
+                FOSSBoard can be deployed to your own private serverless instances in under a minute for free.
+              </p>
+
+              <h3 style="font-size: 0.95rem; margin-top: 1.25rem; margin-bottom: 0.4rem;">Option A: Deno Deploy
+                (Recommended)</h3>
+              <p class="docs-text">
+                Deno Deploy compiles the script globally with zero cold starts. It includes a built-in KV store active
+                by default requiring zero cloud setup.
+              </p>
+              <h4 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem; color: var(--text-primary);">
+                Deploying to Cloud:</h4>
+              <ol
+                style="margin-left: 1.25rem; margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.8rem; line-height: 1.6;">
+                <li>Create a free account on <a href="https://deno.com/deploy" target="_blank">Deno Deploy</a>.</li>
+                <li>Initiate a new project and select "Playground".</li>
+                <li>Copy the content of <code>backend/deno_backend.js</code> and paste it in the editor.</li>
+                <li>Select "Save & Deploy".</li>
+                <li>Toggle the "Self-Host" option in the creation form and paste your endpoint.</li>
+              </ol>
+              <h4 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem; color: var(--text-primary);">
+                Running / Deploying Locally:</h4>
+              <p class="docs-text" style="font-size: 0.8rem;">
+                Since Deno KV is an unstable feature, the Deno CLI requires the unstable flag. FOSSBoard includes a
+                <code>deno.json</code> config. You can spin up the local backend automatically by executing:
+              </p>
+              <div class="endpoint-block" style="margin-bottom: 1.25rem;">
+                <span class="endpoint-url">deno task start</span>
+                <button class="copy-endpoint-btn"
+                  onclick="app.copyToClipboard('deno task start', 'Deno run command')">Copy</button>
+              </div>
+
+              <h3 style="font-size: 0.95rem; margin-top: 1.25rem; margin-bottom: 0.4rem;">Option B: Cloudflare Workers
+              </h3>
+              <p class="docs-text">
+                Cloudflare Workers run globally with a free quota of 100,000 requests per day.
+              </p>
+              <ol
+                style="margin-left: 1.25rem; margin-bottom: 1.25rem; color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6;">
+                <li>Create an account on <a href="https://workers.cloudflare.com" target="_blank">Cloudflare</a>.</li>
+                <li>Initiate a new Worker.</li>
+                <li>Paste the script in <code>backend/worker.js</code> into the worker editor.</li>
+                <li>Go to **Settings** -> **Variables** -> **KV Namespace Bindings** and bind a KV namespace named
+                  <code>LEADERBOARD_KV</code>.
+                </li>
+                <li>Save and deploy.</li>
+              </ol>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+
+    <footer>
+      <div>
+        &copy; 2026 <a href="#" id="footer-logo-link">FOSSBoard</a>. Open-source under MIT.
+      </div>
+      <div class="footer-links">
+        <a href="#" id="footer-home">Create</a>
+        <a href="#" id="footer-dash">Dash</a>
+        <a href="#" id="footer-docs">API Docs</a>
+        <a href="https://github.com" target="_blank"><i class="fa-brands fa-github"></i> GitHub</a>
+      </div>
+    </footer>
+  </div>
+
+  <div class="notifications-container" id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,8 @@
+{
+  "unstable": [
+    "kv"
+  ],
+  "tasks": {
+    "start": "deno run --unstable-kv --allow-net --allow-env backend/deno_backend.js"
+  }
+}
